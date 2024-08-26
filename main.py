@@ -25,7 +25,7 @@ def extract_and_save_scores(file):
 
         score_match = score_pattern.match(line)
         if score_match:
-            score = f"{score_match.group(1)} {score_match.group(2)} {score_match.group(3)}"
+            score = score_match.group(1)  # Only take the first score
             file_names.append(current_filename)
             scores.append(score)
 
@@ -44,7 +44,15 @@ def extract_and_save_scores(file):
 
 
 # Streamlit UI
-st.title("File Upload and Download Example")
+st.title("Extracting Drugs and Score")
+
+# Note
+st.markdown("""
+**Note:**
+- Only text files can be uploaded which should be less than 200MB.
+- The uploaded file will be downloadable with the same filename.
+- Every month, provide a treat as a token of appreciation; otherwise, I have the right to terminate this web application.
+""")
 
 # File uploader widget
 uploaded_file = st.file_uploader("Upload a text file", type="txt")
