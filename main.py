@@ -1,14 +1,16 @@
-import re
+import streamlit as st
 import pandas as pd
+import re
+import io
 
-def extract_and_save_scores(input_file_path, output_file_path):
+def extract_and_save_scores(file):
     # Initialize lists to store the extracted information
     file_names = []
     scores = []
 
     # Read the file
-    with open(input_file_path, 'r') as file:
-        lines = file.readlines()
+    lines = file.readlines()
+    lines = [line.decode("utf-8") for line in lines]  # Convert bytes to string
 
     # Regular expressions to match the filename and score lines
     filename_pattern = re.compile(r"==> (.+\.pdbqt_log\.log) <==")
@@ -33,13 +35,24 @@ def extract_and_save_scores(input_file_path, output_file_path):
     }
     df = pd.DataFrame(data)
 
-    # Export the DataFrame to an Excel file
-    df.to_excel(output_file_path, index=False)
+    # Save the DataFrame to an Excel file in memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False)
+    output.seek(0)
 
-    print(f"Data extracted and saved to {output_file_path}")
+    return output
 
-# Example usage
-input_file_path = "C:\\Users\\ashis\\Downloads\\ULK1_results_2.txt"
-output_file_path = "C:\\Users\\ashis\\Downloads\\Reshmi\\ULK1_results_2.xlsx"
+# Streamlit UI
+st.title("Text File to Excel Converter")
+st.write("Upload a text file, and the corresponding Excel file will be generated and downloaded.")
 
-extract_and_save_scores(input_file_path, output_file_path)
+uploaded_file = st.file_uploader("Choose a .txt file", type="txt")
+
+if uploaded_file is not None:
+    # Process the file
+    output = extract_and_save_scores(uploaded_file)
+
+    # Generate the download link for the Excel file
+    output_file_name = uploaded_file.name.replace(".txt", ".xlsx")
+    st.download_button(label="Download Excel file", data=output, file_name=output_file_name, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
