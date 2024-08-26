@@ -3,14 +3,15 @@ import pandas as pd
 import re
 import io
 
+
 def extract_and_save_scores(file):
     # Initialize lists to store the extracted information
     file_names = []
     scores = []
 
-    # Read the file
-    lines = file.readlines()
-    lines = [line.decode("utf-8") for line in lines]  # Convert bytes to string
+    # Read the uploaded file
+    content = file.read().decode("utf-8")
+    lines = content.splitlines()
 
     # Regular expressions to match the filename and score lines
     filename_pattern = re.compile(r"==> (.+\.pdbqt_log\.log) <==")
@@ -35,24 +36,32 @@ def extract_and_save_scores(file):
     }
     df = pd.DataFrame(data)
 
-    # Save the DataFrame to an Excel file in memory
+    # Save DataFrame to an Excel file in memory
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False)
+    df.to_excel(output, index=False, engine='openpyxl')
     output.seek(0)
-
     return output
 
+
 # Streamlit UI
-st.title("Text File to Excel Converter")
-st.write("Upload a text file, and the corresponding Excel file will be generated and downloaded.")
+st.title("File Upload and Download Example")
 
-uploaded_file = st.file_uploader("Choose a .txt file", type="txt")
+# File uploader widget
+uploaded_file = st.file_uploader("Upload a text file", type="txt")
 
-if uploaded_file is not None:
-    # Process the file
+if uploaded_file:
+    # Extract original filename without extension
+    original_filename = uploaded_file.name
+    base_filename = original_filename.rsplit('.', 1)[0]
+    output_filename = f"{base_filename}.xlsx"
+
+    # Process the file and get the output
     output = extract_and_save_scores(uploaded_file)
 
-    # Generate the download link for the Excel file
-    output_file_name = uploaded_file.name.replace(".txt", ".xlsx")
-    st.download_button(label="Download Excel file", data=output, file_name=output_file_name, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    # Provide download link for the processed file
+    st.download_button(
+        label="Download Processed File",
+        data=output,
+        file_name=output_filename,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
